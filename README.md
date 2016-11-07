@@ -25,3 +25,16 @@ Two files are used for testing purposes. There are template files for each of th
 chpl/chpl-auth/src/test/resources/environment.auth.test.properties
 chpl/chpl-api-for-dummies/src/test/resources/environment.test.properties
 ```
+
+# Calling the REST API
+Let's walk through the different parts of a sample HTTP GET REST call, which can be done programmatically through Java code or an application such as Postman.
+For example: https://chpl.healthit.gov/rest/search?searchTerm=
+In order to successfully make the above REST call, the following must be defined:
+
+HTTP method = GET
+
+Headers:
+API-key: 12909a978483dfb8ecd0596c98ae9094
+Content-Type: application/json
+
+When calling the API programmatically, it is best practice to define sensitive information, including the API-key, username and password, via a local environment.properties file. Within the SampleApp GitHub, there is an environment.properties.template example file. Rename this file to environment.properties, and update the parameter values as appropriate.

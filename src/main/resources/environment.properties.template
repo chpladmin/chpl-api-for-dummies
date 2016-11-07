@@ -1,0 +1,11 @@
+#sampleApp properties
+urlBegin=yoursite.com/
+apiKey=12345a987654abc1abc1234a12ab9876 (change this)
+
+#API Requests (Note: replace 'chpl-service' with 'rest' on deployed servers)
+authenticate=path/to/yourAuthenticate
+someAction=path/to/someAction
+
+#Credentials
+username=yourUsername
+password=yourPassword
