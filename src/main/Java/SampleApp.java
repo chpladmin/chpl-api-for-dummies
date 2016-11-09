@@ -1,40 +1,27 @@
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.PropertyException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpVersion;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.CDL;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class SampleApp {
 	private static final String DEFAULT_PROPERTIES_FILE = "environment.properties";
@@ -48,123 +35,105 @@ public class SampleApp {
 	 */
 	public SampleApp(){}
 	
-	public static void main(String[] args) throws IOException, URISyntaxException {
+	public static void main(String[] args) throws IOException, URISyntaxException, JSONException {
 		SampleApp sampleApp = new SampleApp();
 		
 		props = sampleApp.loadProperties(DEFAULT_PROPERTIES_FILE);
 		
-		// call the API authentication to get a valid token (this is not necessary for many API calls, including /search)
+		/**
+		 * Example 1:
+		 * a. Call the API /auth/authentication using HTTP POST to get a valid token (note: the authentication token is not necessary for many API calls, including /search)
+		 * b. Parse JSON response using com.google.gson
+		 * c. Return token as string
+		 */
 		String token = sampleApp.getToken();
-		//HttpResponse searchResponse = sampleApp.http(URLDecoder.decode(props.getProperty("search"), "UTF-8"));
-		//System.out.println(searchResponse.toString());
+		
+		/**
+		 * Example 2: 
+		 * a. Call the API /search using HTTP GET to get all Certified Product Details
+		 * b. Parse the JSON using org.json to get only information keyed on "product".
+		 * c. Parse the "product" JSON to CSV format
+		 * d. Write the csv data to a file
+		 */
+		String searchResult = sampleApp.getSearchResult();
+		JSONObject search = new JSONObject(searchResult);
+		JSONArray searchArr = search.getJSONArray("results");
+		JSONObject products = new JSONObject();
+		// Get product JSONObject with the CP_id as "id", then the "product" names/values: "versionId", "name", "id", "version"
+		for (Integer i = 0; i < searchArr.length(); i++) {
+		      if(searchArr.optJSONObject(i).has("product")){
+		    	  products.put(searchArr.optJSONObject(i).get("id").toString(), searchArr.optJSONObject(i).get("product"));
+		      }
+		 }
+
+		String csv = CDL.toString(products.toJSONArray(products.names()));
+		File file = new File("products.csv");
+		FileUtils.writeStringToFile(file, csv);
+		
+		/**
+		 * Example 3: 
+		 * a. call the API /search to get all Certified Product Details
+		 * b. Save results to a .txt file
+		 */
+		sampleApp.getSearchResult_saveResultsInFile();
 	}
 	
 	/**
-	 * Gets an authenticated token to be passed for future API calls requiring an authenticated user
+	 * Uses HTTP POST to get an authenticated token to be passed for future API calls that require an authenticated user.
 	 * Uses the Properties from environment.properties to obtain username, password, and API-key
 	 * Parses json response and returns the value of the token from the json
 	 * @return
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
 	 * @throws URISyntaxException
 	 * @throws PropertyException 
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String getToken() {
-		CloseableHttpClient client = HttpClients.createDefault();
-		CloseableHttpResponse response = null;
-		try{
-			if((props.getProperty("targetHost") != null && !props.getProperty("targetHost").isEmpty())
-					&& (props.getProperty("authenticate") != null && !props.getProperty("authenticate").isEmpty())){
-				HttpPost httpPost = new HttpPost(props.getProperty("targetHost") + props.getProperty("authenticate"));
-				List<NameValuePair> nvps = new ArrayList <NameValuePair>();
-				if((props.getProperty("username") != null && !props.getProperty("username").isEmpty())
-						&& (props.getProperty("password") != null && !props.getProperty("password").isEmpty())){
-					
-					nvps.add(new BasicNameValuePair("username", props.getProperty("username")));
-					nvps.add(new BasicNameValuePair("password", props.getProperty("password")));	
-					
-					GsonBuilder gsonBuilder = new GsonBuilder();
-					gsonBuilder.registerTypeAdapter(KeyValuePairSerializer.class, new KeyValuePairSerializer());
-					Gson gson = gsonBuilder.create();
-					logger.debug("json serialization result: " + gson.toJson(nvps, KeyValuePairSerializer.class));
-					httpPost.setEntity(new StringEntity(gson.toJson(nvps, KeyValuePairSerializer.class), ContentType.APPLICATION_JSON));
-					httpPost.setHeader("Content-Type", "application/json");
-					if(props.getProperty("apiKey") != null && !props.getProperty("apiKey").isEmpty()){
-						httpPost.setHeader("API-key", props.getProperty("apiKey"));
-						response = client.execute(httpPost);
-					}
-					else{
-						throw new PropertyException("apiKey property cannot be null or empty");
-					}
-				}
-			}
-			else{
-				throw new PropertyException("targetHost property cannot be null or empty");
-			}
-		}
-		catch(IOException | PropertyException ex){
-			System.out.println(ex);
-		}
-		
-		try{
-			// get json entity, etc
-		} finally {
-			try {
-				response.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		
-		return null;
-//		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-//			URI authenticateUri = new URIBuilder()
-//					.setScheme("http")
-//					.setHost(props.getProperty("host"))
-//					.setPath(props.getProperty("authenticate"))
-//					.build();
-//            HttpPost request = new HttpPost(authenticateUri);
-//
-//            request.addHeader("Content-Type", "application/json");
-//            request.addHeader("API-key", props.getProperty("apiKey"));
-//            
-//            List<NameValuePair> credParams = new ArrayList<NameValuePair>();
-//            credParams.add(new BasicNameValuePair("username", props.getProperty("username")));
-//            credParams.add(new BasicNameValuePair("password", props.getProperty("password")));
-//            request.setEntity(new UrlEncodedFormEntity(credParams));
-//            
-//            HttpResponse result = httpClient.execute(request);
-//            String json = EntityUtils.toString(result.getEntity(), "UTF-8");
-//            JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
-//            return jsonObject.get("token").getAsString();
-//        } catch (IOException ex) {
-//        	System.out.println(ex);
-//        }
-//        return null;
+	public String getToken() throws ClientProtocolException, IOException {
+		String tokenResponse = Request.Post(props.getProperty("targetHost") + props.getProperty("authenticate"))
+		.bodyString("{ \"userName\": \"" + props.getProperty("username") + "\","
+				+ " \"password\": \"" + props.getProperty("password") + "\" }", ContentType.APPLICATION_JSON)
+		.version(HttpVersion.HTTP_1_1)
+		.addHeader("Content-Type", "application/json")
+		.addHeader("API-key", props.getProperty("apiKey"))
+		.execute().returnContent().asString();
+		JsonObject jobj = new Gson().fromJson(tokenResponse, JsonObject.class);
+		String token = jobj.get("token").toString();
+		return token;
 	}
 	
-	public HttpResponse http(String path) throws URISyntaxException {
-		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-			URI authenticateUri = new URIBuilder()
-					.setScheme("http")
-					.setHost(props.getProperty("host"))
-					.setPort(Integer.parseInt(props.getProperty("port")))
-					.setPath(path)
-					.build();
-            HttpPost request = new HttpPost(authenticateUri);
-            //StringEntity params = new StringEntity(jsonParams);
-            request.addHeader("content-type", "application/json");
-            request.addHeader("API-key", props.getProperty("apiKey"));
-            //request.setEntity(params);
-            System.out.println("URL=" + authenticateUri.getHost() + URLDecoder.decode(props.getProperty("search") + "?searchTerm=", "UTF-8"));
-            HttpResponse result = httpClient.execute(request);
-            return result;
-        } catch (IOException ex) {
-        	System.out.println(ex);
-        }
-        return null;
+	/**
+	 * Uses HTTP GET to obtain the JSON response as a string from the /search?searchTerm= API call
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
+	 */
+	public String getSearchResult() throws ClientProtocolException, IOException{
+		String searchResult = Request.Get(props.getProperty("targetHost") + props.getProperty("search"))
+				.version(HttpVersion.HTTP_1_1)
+				.addHeader("Content-Type", "application/json")
+				.addHeader("API-key", props.getProperty("apiKey"))
+				.execute().returnContent().asString();
+		return searchResult;
+	}
+
+	/**
+	 * Uses HTTP GET to obtain the JSON response from the /search?searchTerm= API call and save as a csv
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
+	 */
+	public void getSearchResult_saveResultsInFile() throws ClientProtocolException, IOException{
+		Request.Get(props.getProperty("targetHost") + props.getProperty("search"))
+				.version(HttpVersion.HTTP_1_1)
+				.addHeader("Content-Type", "application/json")
+				.addHeader("API-key", props.getProperty("apiKey"))
+				.execute().saveContent(new File("fullResults.txt"));
 	}
 	
+	/**
+	 * Utility method to load Properties from environment.properties file.
+	 * @param filePathAndName
+	 * @return
+	 */
 	public Properties loadProperties(
 		      final String filePathAndName)
 		   {
