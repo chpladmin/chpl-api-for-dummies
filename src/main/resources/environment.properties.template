@@ -1,11 +1,12 @@
 #sampleApp properties
-urlBegin=yoursite.com/
-apiKey=12345a987654abc1abc1234a12ab9876 (change this)
+targetHost=http://chpl.healthit.gov/rest
+apiKey=yourKeyGoesHere
 
-#API Requests (Note: replace 'chpl-service' with 'rest' on deployed servers)
-authenticate=path/to/yourAuthenticate
-someAction=path/to/someAction
+#API Requests
+authenticate=/auth/authenticate
+search=/search?searchTerm=
+searchOptions=/data/search_options
 
 #Credentials
-username=yourUsername
-password=yourPassword
+username=yourUsernameGoesHere
+password=yourPasswordGoesHere
