@@ -154,6 +154,7 @@ public class SampleApp {
 	 * Returns a valid integer from the console
 	 * @return integer representing user input
 	 * @throws IOException for incorrect user console input
+	 * @param scanner for input
 	 */
 	public Integer getValidUserInput(Scanner scanner) throws IOException{
 		Integer inputInt = FIRST_ITERATION;
@@ -192,7 +193,6 @@ public class SampleApp {
 	 * Uses the Properties from environment.properties to obtain username, password, and API-key
 	 * Parses json response and returns the value of the token from the json
 	 * @return String with the token
-	 * @throws IOException for REST HTTP POST
 	 */
 	public String getToken() {
 		System.out.println("\nRunning example 1 to get token for authentication:");
@@ -225,10 +225,9 @@ public class SampleApp {
 	 * Example 2:
 	 * 
 	 * Uses HTTP GET to obtain the JSON response as a string from the /search?searchTerm= API call
-	 * @throws IOException for REST HTTP GET
 	 * @return String with the searchResult
 	 */
-	public String getSearchResult() throws IOException{
+	public String getSearchResult() {
 		String searchResult = null;
 		System.out.println("\nRunning example 2 to search for certified products:");
 		System.out.println("Making REST HTTP GET call to " + props.getProperty("targetHost") + props.getProperty("search") + 
@@ -281,7 +280,6 @@ public class SampleApp {
 	 * 
 	 * Uses HTTP GET to obtain the JSON response from the /data/search_options API call. Uses token for authentication
 	 * @param token for use in API authentication calls
-	 * @throws IOException for REST HTTP GET
 	 */
 	public void getSearchOptions_usesAuthentication(String token){
 		System.out.println("\nRunning example 4 to call /data/search_options using a token for authentication: ");
