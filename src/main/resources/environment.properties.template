@@ -1,0 +1,12 @@
+#sampleApp properties
+targetHost=http://chpl.healthit.gov/rest
+apiKey=yourKeyGoesHere
+
+#API Requests
+authenticate=/auth/authenticate
+search=/search?searchTerm=
+searchOptions=/data/search_options
+
+#Credentials
+username=yourUsernameGoesHere
+password=yourPasswordGoesHere
