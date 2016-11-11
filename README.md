@@ -6,6 +6,7 @@ Provides an example of an application that calls the CHPL REST Service
 ## Install required software
 
 Java 1.8.0
+mvn 3.3.3
 
 ## Clone the repository
 Using Git Bash, run the following command:
@@ -14,23 +15,7 @@ Using Git Bash, run the following command:
 $ git clone https://github.com/chpladmin/sample-application.git
 ```
 
-## Add external JARs to project
-
-fluent-hc-4.5.2.jar
-java-json.jar
-gson-2.8.0.jar
-log4j-api-2.6.2.jar
-httpclient-4.5.2.jar
-httpcore-4.4.4.jar
-commons-logging-1.2.jar
-commons-csv-1.2.jar
-commons-codec-1.9.jar
-commons-lang3-3.1.jar
-commons-io-2.5.jar
-httpmime-4.5.2.jar
-httpclient-win-4.5.2.jar
-
-# Calling the REST API
+# How to Call the REST API
 
 First, please obtain a valid API-key by registering on the CHPL Resources page at https://chpl.healthit.gov/#/resources 
 
@@ -51,3 +36,12 @@ When calling the API programmatically, it is best practice to define sensitive i
 In the SampleApp, although example #4 uses authentication with the token obtained in example #1, please note that authentication with a token is not a requirement as most API calls do not require authentication. 
 
 Also note that in the SampleApp, the API-key is truncated to 8 characters for display purposes.
+
+# How to Run SampleApp using Maven
+Once the environment.properties has been configured, open Git Bash (or application of your choice), navigate to the SampleApp directory where the pom.xml is located and execute the following command:
+mvn package
+This will create two jars in the /target directory: 
+1. sampleApp-1.0-SNAPSHOT.jar
+2. sampleApp-1.0-SNAPSHOT-jar-with-dependencies.jar
+Navigate to the /target directory and execute the following command to run the application:
+java -jar sampleApp-1.0-SNAPSHOT-jar-with-dependencies.jar
