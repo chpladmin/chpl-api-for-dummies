@@ -28,8 +28,8 @@ In order to successfully make the above REST call, the following must be defined
 HTTP method = GET
 
 Headers:
-    * API-key: 12345a987654abc1abc1234a12ab1234
-    * Content-Type: application/json
+  * API-key: 12345a987654abc1abc1234a12ab1234
+  * Content-Type: application/json
 
 When calling the API programmatically, it is best practice to define sensitive information, including the API Key, username and password, via a local properties file. Within this sample application, there is an environment.properties.template file. Rename this file to environment.properties, and update the property values as appropriate.
 
