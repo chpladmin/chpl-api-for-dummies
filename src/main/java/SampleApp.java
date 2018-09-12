@@ -11,8 +11,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.CDL;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,7 +21,6 @@ import com.google.gson.JsonObject;
 
 public class SampleApp {
 	private static final String DEFAULT_PROPERTIES_FILE = "environment.properties";
-	private static final Logger logger = LogManager.getLogger(SampleApp.class);
 	private static Properties props;
 	public static final Integer ALL_EXAMPLES = 0;
 	public static final Integer FIRST_EXAMPLE = 1;
@@ -68,9 +65,8 @@ public class SampleApp {
 			/**
 			 * Example 2: 
 			 * a. Call the API /search using HTTP GET to get all Certified Product Details
-			 * b. Parse the JSON using org.json to get only information keyed on "product"
+			 * b. Parse the JSON response to get only information keyed on "product"
 			 * c. Parse the "product" JSON to CSV format
-			 * d. Write the csv data to a file
 			 */
 			if(input == ALL_EXAMPLES || input == SECOND_EXAMPLE){
 				String searchResult = sampleApp.getSearchResult();
@@ -88,14 +84,6 @@ public class SampleApp {
 					System.out.println("Parsed search JSONArray to retrieve products as follows: \n" + products.toString());
 					JSONArray productNames = products.toJSONArray(products.names());
 					System.out.println("Parsed certified products JSON to get products as follows: \n" + productNames.toString());
-					String csv = CDL.toString(productNames);
-					System.out.println("Parsed products JSON to CSV as follows: \n" + csv);
-					File file = new File("products.csv");
-					FileUtils.writeStringToFile(file, csv);
-					System.out.println("Saved product information to products.csv");
-				}
-				else{
-					System.out.println("searchResult is null. Skipping creation of CSV.");
 				}
 			}
 
@@ -106,10 +94,6 @@ public class SampleApp {
 			if(input == FOURTH_EXAMPLE || input == ALL_EXAMPLES){
 				if(token != null){
 					sampleApp.getSearchOptions_usesAuthentication(token);
-				}
-				else{
-					System.out.println("\nFailed to run example 4 because the token is null. Please provide a valid token before running the fourth example.\n"
-							+ "Please check the values in environment.properties");
 				}
 			}
 		}
@@ -129,12 +113,11 @@ public class SampleApp {
 		
 		System.out.println("Example 2: ");
 		System.out.println("a. Call the API /search using HTTP GET to get all Certified Product Details");
-		System.out.println("b. Parse the JSON using org.json to get only information keyed on \"product\"");
-		System.out.println("c. Parse the \"product\" JSON to CSV format");
-		System.out.println("d. Write the csv data to a file\n");
+		System.out.println("b. Parse the JSON response to get only information keyed on \"product\"");
+		System.out.println("c. Parse the \"product\" JSON\n");
 		
 		System.out.println("Example 3: ");
-		System.out.println("a. call the API /search to get all Certified Product Details");
+		System.out.println("a. Call the API /search to get all Certified Product Details");
 		System.out.println("b. Save results to a .txt file\n");
 		
 		System.out.println("Example 4: ");
@@ -209,10 +192,16 @@ public class SampleApp {
 					.addHeader("API-key", props.getProperty("apiKey"))
 					.execute().returnContent().asString();
 					JsonObject jobj = new Gson().fromJson(tokenResponse, JsonObject.class);
-					System.out.println("Retrieved the following JSON from /auth/authenticate: \n" + jobj.toString());
-					token = jobj.get("token").toString();
-					System.out.println("Retrieved token " + token);
-					return token;
+					if(jobj == null) {
+					    System.out.println("No token was returned from the server. "
+					            + "Please check that the API Key provided in environment.properties is valid.");;
+					    return null;
+					} else {
+    					System.out.println("Retrieved the following JSON from /auth/authenticate: \n" + jobj.toString());
+    					token = jobj.get("token").toString();
+    					System.out.println("Retrieved token " + token);
+    					return token;
+					}
 		} catch (IOException e){
 			System.out.println("Failed to make call to " + props.getProperty("targetHost") + props.getProperty("authenticate") + 
 					" using API-key=" + props.getProperty("apiKey").substring(0, 8) + "...");
@@ -317,7 +306,6 @@ public class SampleApp {
          final InputStream in = SampleApp.class.getClassLoader().getResourceAsStream(DEFAULT_PROPERTIES_FILE);
          properties.load(in);
          in.close();
-         System.out.println("Loaded Properties from Environment.properties");
       }
       catch (FileNotFoundException fnfEx)
       {
